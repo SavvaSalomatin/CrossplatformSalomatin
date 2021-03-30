@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30611.23
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SalomatinLB2", "SalomatinLB2.csproj", "{7CF6D295-F2FF-469E-9A88-B134C2C3B43E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7CF6D295-F2FF-469E-9A88-B134C2C3B43E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CF6D295-F2FF-469E-9A88-B134C2C3B43E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CF6D295-F2FF-469E-9A88-B134C2C3B43E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CF6D295-F2FF-469E-9A88-B134C2C3B43E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3D29F12E-5D76-4C09-B513-76FE1286A31E}
+	EndGlobalSection
+EndGlobal
