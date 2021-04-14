@@ -16,10 +16,10 @@ namespace SalomatinLB2.Controllers
         private List<Person> people = new List<Person>
         {
             new Person {Login="admin@gmail.com", Password="12345", Role = "admin" },
-            new Person { Login="qwerty@gmail.com", Password="55555", Role = "user" }
+            new Person { Login="user@gmail.com", Password="54321", Role = "user" }
         };
 
-        [HttpPost("token/{username}/{password}")]
+        [HttpPost("/token/{username}/{password}")]
         public IActionResult Token(string username, string password)
         {
             var identity = GetIdentity(username, password);

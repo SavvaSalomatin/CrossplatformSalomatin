@@ -5,12 +5,10 @@ using System.Threading.Tasks;
 
 namespace SalomatinLB2.Models
 {
-    public class Stock
+    public class ShopsStocks
     {
         public long Id { get; set; }
-        public string Name { get; set; }
-        public string Adress { get; set; }
-        public int Volume { get; set; }
-
+        public Stock stock { get; set; }
+        public string Typeofproduct { get; set; }
     }
 }

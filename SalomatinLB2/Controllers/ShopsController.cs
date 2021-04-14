@@ -15,25 +15,49 @@ namespace SalomatinLB2.Controllers
     public class ShopsController : ControllerBase
     {
         private readonly MyContext _context;
+        private readonly ISupMenager _mng;
 
-        public ShopsController(MyContext context)
+        public ShopsController(MyContext context, ISupMenager mng)
         {
+            _mng = mng;
             _context = context;
         }
 
         // GET: api/Shops
-        [Authorize]
+        //[Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Shop>>> GetShops()
         {
-            return await _context.Shops.ToListAsync();
+            var shops = _context.Shops.Include(p => p.Stocks).ThenInclude(i => i.stock);
+            return await _context.Shops.ToArrayAsync();
+        }
+
+
+        // GET: api/TopShop
+        //[Authorize]
+        [HttpGet("TopShop")]
+        public async Task<ActionResult<IEnumerable<Shop>>> GetTopShop()
+        {
+            var Shops = (_mng.SelectTopShop(_context.Shops.Include(p => p.Stocks).ThenInclude(i => i.stock).ToList())).TakeLast(5);
+            if (Shops == null)
+                return CreatedAtAction("GetTopShop", new
+            {
+                result = "Не найдено магазинов, адреса складов которых  "
+            });
+            else
+            {
+                return CreatedAtAction("GetTopShop", new
+                {
+                    result = Shops
+                });
+            }
         }
 
         // GET: api/Shops/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Shop>> GetShop(long id)
         {
-            var shop = await _context.Shops.FindAsync(id);
+            var shop = _context.Shops.Include(i => i.Stocks).ThenInclude(u => u.stock).FirstOrDefault(i => i.Id == id);
 
             if (shop == null)
             {
@@ -43,55 +67,241 @@ namespace SalomatinLB2.Controllers
             return shop;
         }
 
+        // GET: api/Shops/withAdress/Ленинский
+        [HttpGet("withAdress/{Adress}")]
+        //[Authorize(Roles = "admin")]
+        public CreatedAtActionResult GetwithAdress(string adress)
+        { 
+            var shops = _mng.SelectShopswithStocksAdress(_context.Shops.Include(i => i.Stocks).ThenInclude(u => u.stock).ToList(), adress);
+            if (shops.Count == 0)
+                return CreatedAtAction("GetwithAdress", new
+                {
+                    result = "Не найдено магазинов, адреса складов которых  " + adress
+                }) ;
+            else
+            {
+                return CreatedAtAction("GetwithAdress", new
+                {
+                    result = shops
+                });
+            }
+        }
+        // GET: api/Shops/withVolumes/15/25
+        [HttpGet("withVolumes/{v1}/{v2}")]
+        //[Authorize(Roles = "admin")]
+        public CreatedAtActionResult GetwithVolumes(int v1, int v2)
+        {
+            var shops = _mng.SelectShopswithVolumes(_context.Shops.Include(i => i.Stocks).ThenInclude(u => u.stock).ToList(), v1, v2);
+            if (shops.Count == 0)
+                return CreatedAtAction("GetwithVolumes", new
+                {
+                    result = "Не найдено магазинов, товарная ёмкость которых в пределах {" + v1 + " , " + v2 +"}"
+                });
+            else
+            {
+                return CreatedAtAction("GetwithVolumes", new
+                {
+                    result = shops
+                });
+            }
+        }
+
         // PUT: api/Shops/5
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutShop(long id, Shop shop)
+
+        [HttpPut("Changestocktype")]
+        //[Authorize(Roles = "user , admin")]
+        public async Task<ActionResult<Shop>> ChangeStockType([FromForm] long id, [FromForm] long id2, [FromForm] string typeprod)
         {
-            if (id != shop.Id)
+            var shop = _context.Shops.Include(i => i.Stocks).ThenInclude(u => u.stock).FirstOrDefault(i => i.Id == id);
+            if (shop != null)
             {
-                return BadRequest();
-            }
-
-            _context.Entry(shop).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ShopExists(id))
+                if (shop.ChangeStockType(id2, typeprod))
                 {
-                    return NotFound();
+                    await _context.SaveChangesAsync();
+                    return CreatedAtAction("ChangeStock", new
+                    {
+                        result = "Данные магазина обновлены."
+                    });
                 }
                 else
                 {
-                    throw;
+                    return CreatedAtAction("ChangeStock", new
+                    {
+                        result = "В магазине нет такого склада."
+                    });
                 }
             }
+            else
+            {
+                return CreatedAtAction("ChangeStock", new
+                {
+                    result = "Проверьте id магазина."
+                });
 
-            return NoContent();
+            }
+        }
+
+
+        [HttpPut("Buyproduct")]
+        //[Authorize(Roles = "user , admin")]
+        public async Task<ActionResult<Shop>> BuyProduct([FromForm] long id, [FromForm] long id2, [FromForm] int vol)
+        {
+            var shop = _context.Shops.Include(i => i.Stocks).ThenInclude(u => u.stock).FirstOrDefault(i => i.Id == id);
+            if (shop != null)
+            {
+                if (shop.Buy(id2, vol))
+                {
+                    await _context.SaveChangesAsync();
+                    return CreatedAtAction("Buyproduct", new
+                    {
+                        result = "Данные магазина обновлены."
+                    });
+                }
+                else
+                {
+                    return CreatedAtAction("Buyproduct", new
+                    {
+                        result = "В магазине нет такого склада."
+                    });
+                }
+            }
+            else
+            {
+                return CreatedAtAction("Buyproduct", new
+                {
+                    result = "Проверьте id магазина."
+                });
+
+            }
+        }
+
+
+        [HttpPut("Saleproduct")]
+        //[Authorize(Roles = "user , admin")]
+        public async Task<ActionResult<Shop>> SaleProduct([FromForm] long id, [FromForm] long id2, [FromForm] int vol)
+        {
+            var shop = _context.Shops.Include(i => i.Stocks).ThenInclude(u => u.stock).FirstOrDefault(i => i.Id == id);
+            if (shop != null)
+            {
+                if (shop.Sale(id2, vol))
+                {
+                    await _context.SaveChangesAsync();
+                    return CreatedAtAction("ChangeStock", new
+                    {
+                        result = "Данные магазина обновлены."
+                    });
+                }
+                else
+                {
+                    return CreatedAtAction("ChangeStock", new
+                    {
+                        result = "В магазине нет такого склада."
+                    });
+                }
+            }
+            else
+            {
+                return CreatedAtAction("ChangeStock", new
+                {
+                    result = "Проверьте id магазина."
+                });
+
+            }
+        }
+
+
+        // POST: api/Shops/Add
+        [HttpPost("Add")]
+        //[Authorize(Roles = "user , admin")]
+        public async Task<ActionResult<Shop>> AddStock([FromForm] long id, [FromForm] long id2, [FromForm] string typeprod)
+        {
+            var shop = _context.Shops.Include(i => i.Stocks).ThenInclude(u => u.stock).FirstOrDefault(i => i.Id == id);
+            if (shop != null)
+            {
+                var p = shop.Stocks.FirstOrDefault(i => i.stock.Id == id2);
+                if (p == null)
+                {
+                    var StockToAdd = _context.Stocks.FirstOrDefault(r => r.Id == id2);
+                    if (StockToAdd != null)
+                    {
+                        shop.AddStock(StockToAdd, typeprod);
+                        await _context.SaveChangesAsync();
+                        return CreatedAtAction("AddStock", new
+                        {
+                            result = "Склад добавлен."
+                        });
+                    }
+                    else
+                    {
+                        return CreatedAtAction("AddStock", new
+                        {
+                            result = "Такого склада нет в базе."
+                        });
+                    }
+                }
+                else
+                {
+                    return CreatedAtAction("AddStock", new
+                    {
+                        result = "Такой склад уже есть."
+                    });
+                }
+            }
+            else
+            {
+                return CreatedAtAction("AddStock", new
+                {
+                    result = "Магазина с таким номером не найдено."
+                });
+            }
+
         }
 
         // POST: api/Shops
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
-        public async Task<ActionResult<Shop>> PostShop(Shop shop)
+        //[Authorize(Roles = "user , admin")]
+        public async Task<ActionResult<Shop>> PostShop(List<ShopsStocks> shopsstocks, string name, string adress)
         {
-            _context.Shops.Add(shop);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetShop", new { id = shop.Id }, shop);
+            Shop shop = new Shop();
+            foreach (var i in shopsstocks)
+            {
+                foreach (Stock stock in _context.Stocks)
+                {
+                    if (i.Id == stock.Id)
+                    {
+                        ShopsStocks Stock = new ShopsStocks();
+                        Stock.stock = stock;
+                        Stock.Typeofproduct = i.Typeofproduct;
+                        shop.Stocks.Add(Stock);
+                    }
+                }
+            }
+            if (shop.Stocks.Count != 0)
+            {
+                shop.Name = name;
+                shop.Adress = adress;
+                _context.Shops.Add(shop);
+                await _context.SaveChangesAsync();
+                return CreatedAtAction("PostShop", new { id = shop.Id }, shop);
+            }
+            else
+            {
+                return CreatedAtAction("PostShopr", new
+                {
+                    result = "Добавляемых складов нет в базе."
+                });
+            }
         }
+
 
         // DELETE: api/Shops/5
         [HttpDelete("{id}")]
+        //[Authorize(Roles = "user , admin")]
         public async Task<ActionResult<Shop>> DeleteShop(long id)
         {
-            var shop = await _context.Shops.FindAsync(id);
+            var shop = _context.Shops.Include(i => i.Stocks).ThenInclude(u => u.stock).FirstOrDefault(i => i.Id == id);
             if (shop == null)
             {
                 return NotFound();
@@ -103,38 +313,52 @@ namespace SalomatinLB2.Controllers
             return shop;
         }
 
-        [HttpGet("StockId/{Id}")]
-        public async Task<ActionResult<IEnumerable<Shop>>> GetStocks(int v)
+        //DELETE:api/Shops/5/Stock/2
+        [HttpDelete("{id}/Stock/{id2}")]
+        //[Authorize(Roles = "user , admin")]
+        public async Task<ActionResult<Shop>> DeleteStock(long id, long id2)
         {
-            return await _context.Shops.Where(u => u.StockId == v).ToListAsync();
-        }
-
-        [HttpGet("StockAdress/{Id}")]
-        IEnumerable<ShopfromStock> GetShopList(IEnumerable<Shop> tblshops, IEnumerable<Stock> tblstocks)
-        {
-            var result = new List<ShopfromStock>();
-            foreach (Stock stock in tblstocks)
+            var shop = _context.Shops.Include(i => i.Stocks).ThenInclude(u => u.stock).FirstOrDefault(i => i.Id == id);
+            if (shop != null)
             {
-                var match = tblshops.FirstOrDefault((r) => r.Adress.Contains(stock.Adress));
-                if (match != null)
+                if (shop.DeleteStock(id2))
                 {
-                    result.Add(new ShopfromStock() { Id = stock.Id, Adress = match.Adress });
+                    await _context.SaveChangesAsync();
+                    if (shop.Stocks.Count == 0)
+                    {
+                        _context.Shops.Remove(shop);
+                        await _context.SaveChangesAsync();
+                        return CreatedAtAction("DeleteStock", new
+                        {
+                            result = "Склад"+id2+ "удален из магазина"+id
+                        });
+                    }
+                    return CreatedAtAction("DeleteStock", new
+                    {
+                        result = "Данные магазина обновлены."
+                    });
+                }
+                else
+                {
+                    return CreatedAtAction("DeleteStock", new
+                    {
+                        result = "В магазине нет такого склада."
+                    });
                 }
             }
-            return result;
+            else
+            {
+                return CreatedAtAction("DeleteStock", new
+                {
+                    result = "Такого магазина не найдено."
+                });
+
+            }
         }
 
         private bool ShopExists(long id)
         {
             return _context.Shops.Any(e => e.Id == id);
-        }
-
-
-
-        class ShopfromStock
-        {
-            public long Id { get; set; }
-            public string Adress { get; set; }
         }
     }
 }

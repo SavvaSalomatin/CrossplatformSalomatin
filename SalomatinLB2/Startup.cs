@@ -29,7 +29,7 @@ namespace SalomatinLB2
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            string cons = "Server=(localdb)\\mssqllocaldb;Database=SomeTastydb;Trusted_Connection=True;";
+            string cons = "Server=(localdb)\\mssqllocaldb;Database=DBShop;Trusted_Connection=True;";
             services.AddDbContext<MyContext>(options => options.UseSqlServer(cons));
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
@@ -55,7 +55,10 @@ namespace SalomatinLB2
         ValidateIssuerSigningKey = true,
     };
 });
-            services.AddControllers();
+            services.AddControllersWithViews();
+            services.AddDbContext<MyContext>(options => options.UseSqlServer(Configuration.GetConnectionString("MyContext")));
+            // services.AddControllers();
+            services.AddScoped<ISupMenager, SupMenager>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

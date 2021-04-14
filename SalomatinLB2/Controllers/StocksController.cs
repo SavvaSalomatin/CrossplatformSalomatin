@@ -21,7 +21,7 @@ namespace SalomatinLB2.Controllers
             _context = context;
         }
         // GET: api/Stocks
-        [Authorize]
+        //[Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Stock>>> GetStocks()
         {
@@ -45,7 +45,7 @@ namespace SalomatinLB2.Controllers
         // PUT: api/Stocks/5
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [Authorize(Roles = "admin")]
+
         [HttpPut("{id}")]
         public async Task<IActionResult> PutStock(long id, Stock stock)
         {
@@ -74,7 +74,8 @@ namespace SalomatinLB2.Controllers
 
             return NoContent();
         }
-        [Authorize]
+
+
         // POST: api/Stocks
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
@@ -86,7 +87,7 @@ namespace SalomatinLB2.Controllers
 
             return CreatedAtAction("GetStock", new { id = stock.Id }, stock);
         }
-        [Authorize(Roles = "admin")]
+
         // DELETE: api/Stocks/5
         [HttpDelete("{id}")]
         public async Task<ActionResult<Stock>> DeleteStock(long id)
